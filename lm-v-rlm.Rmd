@@ -17,7 +17,7 @@ library(broom)
 
 3. Following the approach in class for nested data frames, please calculate, for each country in the gapminder dataset, the slope of the linear regression of life expectency against log10 of per capita GDP. Do the same using the rlm function in the MASS package (rlm() gives robust estimates, which are less affected by outliers---the broom package works with the output of rlm). Produce a plot of the slope estimates from lm versus the slope estimates from rlm. Countries that don't fall near the diagonal line might have a non-normal error distribution. For the countries with the biggest differences in the two slope estimates, show the scatter plots of log10 per capita GDP versus life expectency.
 
-```{r problem3, echo = FALSE, cache = TRUE}
+```{r problem3, warning = FALSE, echo = FALSE, cache = TRUE}
 
 ## Nesting
 gap_nested <- gapminder %>%
@@ -33,7 +33,7 @@ gap_lm_slope <- function(df){
 gap_unnested <- gap_nested %>%
   mutate(slope = map(data, gap_lm_slope)) %>%
   unnest(country, slope) %>%
-  unnest(data)
+  unnest(data, .drop = TRUE)
 
 ## Function to calculate slope using rlm function
 gap_rlm_slope <- function(df) {
@@ -44,6 +44,7 @@ gap_rlm_unnested <- gap_nested %>%
   mutate(slope = map(data, gap_rlm_slope)) %>%
   unnest(country, slope) %>%
   unnest(data)
+
 
 
 
