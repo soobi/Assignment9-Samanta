@@ -25,17 +25,26 @@ gap_nested <- gapminder %>%
   group_by(country) %>%
   nest()
 
-gap_lm <- function(df){
-  lm(lifeExp ~ log_gdpPercap, data = df)
-}
-get_slope <- function(df){
-  gap_lm(df)$coefficients[2]
+## Function to calculate slope of linear regression of life expectancy against log10 of per capita GDP
+gap_lm_slope <- function(df){
+  lm(lifeExp ~ log_gdpPercap, data = df)$coefficients[2]
 }
 
 gap_unnested <- gap_nested %>%
-  mutate(slope = map(data, get_slope)) %>%
+  mutate(slope = map(data, gap_lm_slope)) %>%
   unnest(country, slope) %>%
   unnest(data)
+
+## Function to calculate slope using rlm function
+gap_rlm_slope <- function(df) {
+  rlm(lifeExp ~ log_gdpPercap, data = df)$coefficients[2]
+}
+
+gap_rlm_unnested <- gap_nested %>%
+  mutate(slope = map(data, gap_rlm_slope)) %>%
+  unnest(country, slope) %>%
+  unnest(data)
+
 
 
 
