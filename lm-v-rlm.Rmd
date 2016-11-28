@@ -9,15 +9,12 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(gapminder)
-library(modelr)
-library(purrr)
-library(MASS)
 library(broom)
 ```
 
 3. Following the approach in class for nested data frames, please calculate, for each country in the gapminder dataset, the slope of the linear regression of life expectency against log10 of per capita GDP. Do the same using the rlm function in the MASS package (rlm() gives robust estimates, which are less affected by outliers---the broom package works with the output of rlm). Produce a plot of the slope estimates from lm versus the slope estimates from rlm. Countries that don't fall near the diagonal line might have a non-normal error distribution. For the countries with the biggest differences in the two slope estimates, show the scatter plots of log10 per capita GDP versus life expectency.
 
-```{r problem3, warning = FALSE, echo = FALSE, cache = TRUE}
+```{r problem3, warning = FALSE, message=FALSE, echo = FALSE, cache = TRUE}
 
 ## Nesting
 gap_nested <- gapminder %>%
@@ -41,12 +38,33 @@ gap_rlm_slope <- function(df) {
 }
 
 gap_rlm_unnested <- gap_nested %>%
-  mutate(slope = map(data, gap_rlm_slope)) %>%
-  unnest(country, slope) %>%
+  mutate(rlm_slope = map(data, gap_rlm_slope)) %>%
+  unnest(country, rlm_slope) %>%
   unnest(data)
 
+## Joining the two to compare & plot
+gap_lm_rlm <- left_join(gap_unnested,gap_rlm_unnested)
+
+ggplot(gap_lm_rlm, aes(slope,rlm_slope)) + geom_point() + geom_abline()+ggtitle("lm slope estimates vs rlm slope estimates")
+```
 
 
+Finding out which countries have largest difference in slopes. 
+```{r diffs, echo = FALSE, cache = TRUE}
+## Differencing and finding out what the countries have the largest differences
+bad_fit <- gap_lm_rlm %>%
+  mutate(difference = abs(rlm_slope - slope)) %>%
+  arrange(desc(difference)) %>%
+  head(20)
+bad_fit[,c("country","difference")]
 
+```  
+  
+  Looks like Senegal has the largest difference between the two slopes, with Lesotho as the distant 2nd. 
+```{r scatterplots,echo = FALSE, cache = TRUE}
+##Scatterplots for countries with biggest differencs
+ggplot(filter(gapminder, country == "Senegal" | country == "Lesotho"), aes(log10(gdpPercap), lifeExp, color = country)) +
+  geom_point() + ggtitle("Logged GDP vs Life Expectancy")
 
 ```
+
