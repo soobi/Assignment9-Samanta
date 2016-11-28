@@ -19,4 +19,24 @@ library(broom)
 
 ```{r problem3, echo = FALSE, cache = TRUE}
 
+## Nesting
+gap_nested <- gapminder %>%
+  mutate(log_gdpPercap = log10(gdpPercap)) %>%
+  group_by(country) %>%
+  nest()
+
+gap_lm <- function(df){
+  lm(lifeExp ~ log_gdpPercap, data = df)
+}
+get_slope <- function(df){
+  gap_lm(df)$coefficients[2]
+}
+
+gap_unnested <- gap_nested %>%
+  mutate(slope = map(data, get_slope)) %>%
+  unnest(country, slope) %>%
+  unnest(data)
+
+
+
 ```
